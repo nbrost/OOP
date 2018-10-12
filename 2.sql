@@ -1,4 +1,4 @@
-.print Question 1 - nbrost
+.print Question 2 - nbrost
 .echo on
 select distinct name, m.email
 from members m,cars c, rides r, bookings b

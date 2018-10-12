@@ -1,4 +1,4 @@
-.print Question 1 - nbrost
+.print Question 5 - nbrost
 .echo on
 select locations.city, locations.prov
 from locations
