@@ -1,13 +1,10 @@
 .print Question 1 - nbrost
 .echo on
-select distinct r.rid, r.email, r.pickup, r.dropoff, ri.rno, l.city
-from rides ri, requests r, locations l
-where r.rdate = ri.rdate
-and r.amount >= ri.price
-and r.pickup= l.lcode
-and l.city in (select l.city
-		from rides ri, locations l
-		where ri.src = l.lcode)
-and r.dropoff in (select 
-;
+select  city
+from requests
+join locations as a
+on requests.pickup = a.lcode;
+/*join rides as b
+on b.src = locations.lcode
+where a.city = b.city;*/
 
