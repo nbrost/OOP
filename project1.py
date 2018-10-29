@@ -208,6 +208,26 @@ def enroll(student_id, course_id):
     connection.commit()
     return
 
+def sign_in():
+    global connection, cursor
+    while True:
+        user = input("Enter email or quit: ")
+        if user == "quit":
+            return None
+        password = input("Enter Password: ")
+        log_in_query = ('''
+        select email, name, phone, pwd
+        from members
+        where email = '{0}'
+        and pwd = '{1}'; '''.format(user, password))
+        cursor.execute(log_in_query)
+        member = cursor.fetchall()
+        
+        if member == []:
+            return None
+        return member[0]
+        
+
 
 def main():
     global connection, cursor
@@ -217,11 +237,13 @@ def main():
     #drop_tables()
     #define_tables()
     #insert_data()
-    sign_in_flag = int(raw_input("Press 1 to sign in and 2 to create a new user: "))
-    while sign_in_flag == 1:
-        user = raw_input("Username: ")
-        password = raw_input("Password: ")
-        sign_in_flag = 0
+    sign_in_flag = int(input("Press 1 to sign in or 2 to create a new user: "))
+    if sign_in_flag == 1:
+        member = sign_in()
+    print (member)
+    #else:
+    #    create_user()
+    
     connection.commit()
     connection.close()
     return
