@@ -49,8 +49,7 @@ def sign_in():
     global connection, cursor
     while True:
         user = input("Enter email or quit: ")
-        if user == "quit":
-            end()
+        input_test(user)
         password = input("Enter Password: ")
         log_in_query = ('''
         select email, name, phone, pwd
@@ -119,25 +118,54 @@ def create_user():
 #if creating a user it will then ask you to sign into that user
 def sign_in_screen():        
     while True:
-        try:
-            sign_in_flag = int(input("Press 1 to sign in, 2 to create a new user or 3 to quit: "))
-            if sign_in_flag not in (1,2,3):
-                print ("Please enter 1, 2 or 3")
+        sign_in_flag = (input("Please select from the following options\n    1 to sign in\n    2 to create a new user: "))
+        input_test(sign_in_flag)
+        try:            
+            sign_in_flag = int(sign_in_flag)
+            if sign_in_flag not in (1,2):
+                print ("Please enter 1 or 2")
         except:
-            print ("Please enter 1, 2 or 3")   
+            print ("Please enter 1 or 2")   
         if sign_in_flag ==1:
             member = sign_in()
             return member
         elif sign_in_flag == 2:
             create_user()
-        elif sign_in_flag == 3:
-            end()
 
 
+#This function will receive a member and ask for 1-3 location key words
+#It will then query the database for rides that match all three queries
+#It will display the first 5 with the option to see more
+#The user will be given the option to send the ride poster a message to book the ride
+def search_for_ride(member):
+    global connection, cursor
+    location1 = input("You are searching for rides\nPlease enter at least 1 Location\nEnter first location: ")
+    input_test(location1)
+    if location1 == '':
+        return
+    location2 = input("Enter second location: ")
+    input_test(location2)
+    location3 = location1
+    if location2 !='':
+        location3 = input("Enter third location: ")
+        if location3 == '':
+            location3 = location2
+    else:
+        location2 = location1
+    input_test(location3)
+    
+    return
+
+#tests input to see if it is a quit string
+def input_test(string):
+    if string.lower() in ('q','quit'):
+        end()
+    return
 
 #this function is passed a member tuple that contains (email,name,phone,pwd)
 #this will ask what the user wants to do 
 def operations(member):
+    
     option = input('''The following are your options:
     1.Offer Ride
     2.Search For Ride
@@ -147,6 +175,7 @@ def operations(member):
     6.Log out
     7.Exit Program
     Please enter number: ''')
+    input_test(option)
     try:
         option=int(option)
     except:
@@ -164,7 +193,7 @@ def operations(member):
         search_requests(member)
     elif option == 6:
         member = sign_in_screen()
-    elif option == 7: 
+    elif option == 7:
         end()
     else:
         print("Please enter 1-7")
@@ -180,13 +209,14 @@ def end():
     
 def main():
     global connection, cursor
-    
+    print("\nType q or quit at anytime to exit.\n")
     path = "./rideshare.db"
     connect(path)
     drop_tables()
     dbsetup.define_tables(connection,cursor)
     dbsetup.insert_data(connection,cursor)
     member = sign_in_screen()
+    
     while True:
         member = operations(member)
     
