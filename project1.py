@@ -153,7 +153,52 @@ def search_for_ride(member):
     else:
         location2 = location1
     input_test(location3)
-    
+    search_query = ('''
+    select distinct rides.rno, rides.price, rides.rdate, rides.seats, rides.lugDesc,
+                  rides.src, rides.dst, rides.driver, rides.cno,cars.make,
+                  cars.model, cars.year, cars.seats, cars.owner
+    from rides join locations as source on rides.src = source.lcode
+               left join locations as destination on rides.dst = destination.lcode
+               left join enroute on rides.rno = enroute.rno
+               left join locations as enrou on enroute.lcode = enrou.lcode
+               left join cars on rides.cno = cars.cno
+    where (rides.src = '{0}' COLLATE NOCASE OR
+           rides.dst = '{0}' COLLATE NOCASE OR
+           source.city LIKE '%{0}%' COLLATE NOCASE OR
+           source.prov LIKE '%{0}%' COLLATE NOCASE OR
+           source.address LIKE '%{0}%' COLLATE NOCASE OR
+           destination.city LIKE '%{0}%' COLLATE NOCASE OR
+           destination.prov LIKE '%{0}%' COLLATE NOCASE OR 
+           destination.address LIKE '%{0}%' COLLATE NOCASE OR
+           enrou.city LIKE '%{0}%' COLLATE NOCASE OR
+           enrou.prov LIKE '%{0}%' COLLATE NOCASE OR
+           enrou.address LIKE '%{0}%' COLLATE NOCASE) AND
+          (rides.src = '{1}' COLLATE NOCASE OR
+           rides.dst = '{1}' COLLATE NOCASE OR
+           source.city LIKE '%{1}%' COLLATE NOCASE OR
+           source.prov LIKE '%{1}%' COLLATE NOCASE OR
+           source.address LIKE '%{1}%' COLLATE NOCASE OR
+           destination.city LIKE '%{1}%' COLLATE NOCASE OR
+           destination.prov LIKE '%{1}%' COLLATE NOCASE OR 
+           destination.address LIKE '%{1}%' COLLATE NOCASE OR
+           enrou.city LIKE '%{1}%' COLLATE NOCASE OR
+           enrou.prov LIKE '%{1}%' COLLATE NOCASE OR
+           enrou.address LIKE '%{1}%' COLLATE NOCASE) AND 
+          (rides.src = '{2}' COLLATE NOCASE OR
+           rides.dst = '{2}' COLLATE NOCASE OR
+           source.city LIKE '%{2}%' COLLATE NOCASE OR
+           source.prov LIKE '%{2}%' COLLATE NOCASE OR
+           source.address LIKE '%{2}%' COLLATE NOCASE OR
+           destination.city LIKE '%{2}%' COLLATE NOCASE OR
+           destination.prov LIKE '%{2}%' COLLATE NOCASE OR 
+           destination.address LIKE '%{2}%' COLLATE NOCASE OR
+           enrou.city LIKE '%{2}%' COLLATE NOCASE OR
+           enrou.prov LIKE '%{2}%' COLLATE NOCASE OR
+           enrou.address LIKE '%{2}%' COLLATE NOCASE);
+               '''.format(location1,location2,location3))
+    cursor.execute(search_query)
+    rides = cursor.fetchall()
+    print(rides) #just need to display 5 at a time, then allow messaging
     return
 
 #tests input to see if it is a quit string
