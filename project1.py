@@ -198,8 +198,57 @@ def search_for_ride(member):
                '''.format(location1,location2,location3))
     cursor.execute(search_query)
     rides = cursor.fetchall()
-    print(rides) #just need to display 5 at a time, then allow messaging
+    if rides == []:
+        print("Sorry but no rides matched your keywords")
+
+    selected = print_rides(rides) #will print rides and ask for ride to message
+    message_driver(selected, member)
     return
+
+def message_driver(rno, member):
+    global connection, cursor
+    message_query = """select driver
+                       from rides
+                       where rno = '{0}'""".format(rno)
+    cursor.execute(message_query)
+    address = cursor.fetchall()
+    if address== []:
+        print("Sorry that ride doesn't exist")
+        return
+    message = input("What would you like to say: ")
+    input_test(message)
+    print(member[0])
+    send_message = """insert into inbox values ('{0}',datetime('now'),'{1}','{2}','{3}','n');""".format(
+        address[0][0], member[0], message, rno)
+    cursor.execute(send_message)
+    return
+
+
+def print_rides(rides):
+    current = 0
+    max = len(rides)
+    for x in range(max):
+        ride_string =( '''\n\tRno: {0}\n\tPrice: {1}\n\tRide Date: {2}\n\tSeats: {3}\n\tLuggage Description:{4}
+        Source code: {5}\n\tDestination Code {6}\n\tDriver: {7}\n\tCar Number: {8}\n\tMake: {9}
+        Model: {10}\n\tYear: {11}\n\tSeats: {12}\n\t Owner: {13}'''.format(rides[x][0],
+        rides[x][1], rides[x][2], rides[x][3], rides[x][4], rides[x][5], rides[x][6], rides[x][7], rides[x][8], rides[x][9]
+        , rides[x][10], rides[x][11], rides[x][12], rides[x][13]))
+        print(ride_string)
+        if ((x+1)%5 ==0):
+            flag = input("\nContinue printing? (Y/N): ")
+            input_test(flag)
+            if flag in('No', 'N', 'NO', 'no', 'n'):
+                break
+    while(True):
+        selected = input("Select ride number if you wish to message the driver: ")
+        input_test(selected)
+        if selected == '':
+           return
+        try:
+            int(selected)
+            return(selected)
+        except:
+            print("Sorry that is not a valid number")
 
 #tests input to see if it is a quit string
 def input_test(string):
