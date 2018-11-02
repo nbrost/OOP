@@ -205,6 +205,7 @@ def search_for_ride(member):
     message_driver(selected, member)
     return
 
+#checks to see if a ride exists and will send the driver a message if it does
 def message_driver(rno, member):
     global connection, cursor
     message_query = """select driver
@@ -224,6 +225,9 @@ def message_driver(rno, member):
     return
 
 
+
+#Will print all rides 5 at a time and ask for the ride they wish to message about
+#returns the ride number
 def print_rides(rides):
     current = 0
     max = len(rides)
@@ -255,6 +259,75 @@ def input_test(string):
     if string.lower() in ('q','quit'):
         end()
     return
+
+#asks user for date, pickup location, drop off location, and amount willing to pay for seat
+#will then post a ride request with a unique number and the members email address
+def post_request(member):
+    global connection, cursor
+    while True:
+        try:
+            year = input("To request a ride please enter the following\n\tYear: ")
+            assert (int(year) >=2018), ''
+            month = input("\tMonth: ")
+            assert (int(month) >0 and int(month) <13), ''
+            if len(month) <2:
+                month = '0' + month
+            day = input('\tDay: ')
+            assert (int(day) >0 and int(day) <32), ''
+            if len(day) <2:
+                day = '0' + day
+            date = year + '-' + month + '-' + day # formats the data correctly
+            break
+        except:
+            print("Please enter a correct date")
+    pick_up = input("\tPick up location code: ")
+    input_test(pick_up)
+    drop_off = input("\tDrop off location code: ")
+    input_test(drop_off)
+    while True:
+        try:
+            price = input("\tAmount willing to pay: ")
+            input_test(price)
+            assert int(price) >0, ''
+            break
+        except:
+            print('\tPlease enter a positive number')
+    if not check_lcode(pick_up):
+        print("\n Sorry That pick up location doesn't exist\n")
+        return
+    if not check_lcode(drop_off):
+        print("\n Sorry that drop off location doesn't exist\n")
+        return
+
+    request_query = '''select rid
+                       from requests
+                       order by rid DESC
+                       limit 1;'''
+    cursor.execute(request_query) #gets the highest rno from the rides column
+    rid = int((cursor.fetchall())[0][0]) + 1 #sets the rno to 1 greater than previous highest
+    insert_query = '''insert into requests values (
+                      {0},'{1}','{2}','{3}','{4}',{5});'''.format(rid, member[0], date, pick_up, drop_off, price)
+    cursor.execute(insert_query)
+    print("\nYour ride request has been posted\n")
+    retrieve = '''select * from requests where rid = 10;'''
+    cursor.execute(retrieve)
+    print(cursor.fetchall())
+
+    return
+
+
+#will return true if a given lcode is in the database or False if it isn't
+def check_lcode(lcode):
+    global connection, cursor
+    lcodes_query = '''select lcode
+                    from locations
+                    where lcode = '{0}';'''.format(lcode)
+
+    cursor.execute(lcodes_query)
+    pick_up = cursor.fetchall()
+    if pick_up == []:
+        return False
+    return True
 
 #this function is passed a member tuple that contains (email,name,phone,pwd)
 #this will ask what the user wants to do 
