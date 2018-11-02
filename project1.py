@@ -104,8 +104,19 @@ def create_user():
         if test != []:#if the query isn't empty then the email is not unique
             print ("There is already a member with that email\nPlease provide a unique email")
         else:
-            name = input("Enter your name: ") #gets info for a new user
-            phone = input("Enter your phone number: ")
+            name = input("Enter your name: ")
+            input_test(name)#gets info for a new user
+            while True:
+                phone = input("Enter your phone number (XXX-XXX-XXXX): ")
+                input_test(name)
+                try:
+                    assert(len(phone) == 12), ''    
+                    int(phone[0:3]+phone[4:7] + phone[8:])
+                    assert(phone[3] == '-' and phone[7] == '-'), ''
+                    break
+                except:
+                    print("\nPlease enter a proper password.\n")
+            
             password = input("Enter your password: ")
             new_member_query = ('''
             insert into members values
@@ -501,9 +512,9 @@ def main():
     print("\nType q or quit at anytime to exit.\n")
     path = input ("Enter Database name: ")
     connect(path)
-    drop_tables()
-    dbsetup.define_tables(connection,cursor)
-    dbsetup.insert_data(connection,cursor)
+    #drop_tables()
+    #dbsetup.define_tables(connection,cursor)
+    #dbsetup.insert_data(connection,cursor)
     member = sign_in_screen()
     
     while True:
