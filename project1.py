@@ -118,7 +118,7 @@ def create_user():
 #if creating a user it will then ask you to sign into that user
 def sign_in_screen():        
     while True:
-        sign_in_flag = (input("Please select from the following options\n    1 to sign in\n    2 to create a new user: "))
+        sign_in_flag = (input("\nPlease select from the following options\n    1 to sign in\n    2 to create a new user: "))
         input_test(sign_in_flag)
         try:            
             sign_in_flag = int(sign_in_flag)
@@ -218,11 +218,31 @@ def message_driver(rno, member):
         return
     message = input("What would you like to say: ")
     input_test(message)
-    print(member[0])
     send_message = """insert into inbox values ('{0}',datetime('now'),'{1}','{2}','{3}','n');""".format(
         address[0][0], member[0], message, rno)
     cursor.execute(send_message)
+    print("\nMessage Sent!\n")
     return
+
+#checks to see if a ride exists and will send the driver a message if it does
+def message_requester(rid, member):
+    global connection, cursor
+    message_query = """select email
+                       from requests
+                       where rid = '{0}'""".format(rid)
+    cursor.execute(message_query)
+    address = cursor.fetchall()
+    if address== []:
+        print("Sorry that request doesn't exist")
+        return
+    message = input("What would you like to say: ")
+    input_test(message)
+    send_message = """insert into inbox values ('{0}',datetime('now'),'{1}','{2}','{3}','n');""".format(
+        address[0][0], member[0], message, rid)
+    cursor.execute(send_message)
+    print("\nMessage Sent!\n")
+    return
+
 
 
 
@@ -309,9 +329,6 @@ def post_request(member):
                       {0},'{1}','{2}','{3}','{4}',{5});'''.format(rid, member[0], date, pick_up, drop_off, price)
     cursor.execute(insert_query)
     print("\nYour ride request has been posted\n")
-    retrieve = '''select * from requests where rid = 10;'''
-    cursor.execute(retrieve)
-    print(cursor.fetchall())
 
     return
 
@@ -329,16 +346,119 @@ def check_lcode(lcode):
         return False
     return True
 
+
+#will ask the member if they want to see their ride requests
+#or if they want to search ride requests and message a member
+def requests(member):
+    global connection, cursor
+    while True:
+        option = input("Select from the following\n\tPress 1 to see your requests\n\tPress 2 to search requests: ")
+        input_test(option)
+        try:
+            assert int(option) in (1,2), ''
+            break
+        except:
+            print("Please select 1 or 2")
+    if option == '1':
+        display_requests(member)
+        return
+    search_requests(member)
+    return
+
+def search_requests(member):
+    global connection, cursor
+    location = input("\nEnter a location code or location: ")
+    input_test(location)
+    if location == '':
+        return
+    request_search = '''select r.rid, r.email, r.rdate, r.pickup, r.dropoff, r.amount
+                        from requests as r 
+                        left join locations as pickup on r.pickup = pickup.lcode
+                        where (pickup.lcode = '{0}' OR
+                               pickup.city LIKE '%{0}%' COLLATE NOCASE);'''.format(location)
+    cursor.execute(request_search)
+    requests = cursor.fetchall()
+    if requests == []:
+        print("\nSorry there aren't any requests that match your search\n")
+        return
+    print("\nThe following requests match your search\n")
+    for x in range(len(requests)):
+        requests_string = ('''\n\tRequest ID: {0}\n\tEmail: {1}\n\tRide Date: {2}\n\tPick up: {3}
+        Drop off: {4}\n\tAmount: {5}\n''').format(requests[x][0], requests[x][1],
+                                                    requests[x][2], requests[x][3],
+                                                    requests[x][4], requests[x][5])
+        print(requests_string)
+        if ((x+1)%5 == 0):
+            flag = input("\n Continue printing? (Y/N): ")
+            input_test(flag)
+            if flag in ('No', 'N', 'NO', 'no', 'n'):
+                break
+    rid = input("\nEnter Ride ID to message the requester: ")
+    input_test(rid)
+    if rid == '':
+        return
+    message_requester(rid, member)
+    return
+
+
+def display_requests(member):
+    global connection, cursor
+    request_query = '''select * from requests where email = '{0}';'''.format(member[0])
+    cursor.execute(request_query)
+    requests = cursor.fetchall()
+    if requests == []:
+        print("\nYou don't have any requests\n")
+        return
+    print("\nThe following are your requests\n")
+    for x in range(len(requests)):
+        requests_string = ('''\n\tRequest ID: {0}\n\tEmail: {1}\n\tRide Date: {2}\n\tPick up: {3}
+        Drop off: {4}\n\tAmount: {5}\n''').format(requests[x][0], requests[x][1],
+                                                    requests[x][2], requests[x][3],
+                                                    requests[x][4], requests[x][5])
+        print(requests_string)
+        if ((x+1)%5 == 0):
+            flag = input("\n Continue printing? (Y/N): ")
+            input_test(flag)
+            if flag in ('No', 'N', 'NO', 'no', 'n'):
+                break
+    drop_requests(member)
+    return
+
+def drop_requests(member):
+    global connection, cursor
+    while True:
+        rid = input("\nEnter Ride Id of ride you wish to Delete: ")
+        input_test(rid)
+        if rid == '':
+            return
+        test_query = '''select * from requests where rid = '{0}' and email = '{1}';'''.format(rid,
+                                                                                            member[0])
+        cursor.execute(test_query)
+        flag = cursor.fetchall()
+        if flag ==[]:
+            print("\nYou don't have any requests with that Ride Id")
+        else:
+            drop_query = '''delete from requests where rid = '{0}' and email = '{1}';'''.format(rid,
+                                                                                            member[0])
+            cursor.execute(drop_query)
+            print('\nRide was successfully dropped\n')
+
+
+
+
+
+
+
 #this function is passed a member tuple that contains (email,name,phone,pwd)
 #this will ask what the user wants to do 
 def operations(member):
     
-    option = input('''The following are your options:
+    option = input('''\nThe following are your options:
     1.Offer Ride
     2.Search For Ride
     3.Book Members or Cancel Booking
     4.Post Ride Requests
-    5.Search and Delete Ride Requests
+    5.Search or Delete Ride Requests
     6.Log out
     7.Exit Program
     Please enter number: ''')
@@ -357,7 +477,7 @@ def operations(member):
     elif option == 4:
         post_request(member)
     elif option == 5:
-        search_requests(member)
+        requests(member)
     elif option == 6:
         member = sign_in_screen()
     elif option == 7:
@@ -370,6 +490,8 @@ def operations(member):
             
 #prints goodbye and exits
 def end():
+    connection.commit()
+    connection.close()
     print("Goodbye")
     sys.exit()
     
@@ -377,7 +499,7 @@ def end():
 def main():
     global connection, cursor
     print("\nType q or quit at anytime to exit.\n")
-    path = "./rideshare.db"
+    path = input ("Enter Database name: ")
     connect(path)
     drop_tables()
     dbsetup.define_tables(connection,cursor)
