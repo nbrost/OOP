@@ -166,13 +166,11 @@ def search_for_ride(member):
     input_test(location3)
     search_query = ('''
     select distinct rides.rno, rides.price, rides.rdate, rides.seats, rides.lugDesc,
-                  rides.src, rides.dst, rides.driver, rides.cno,cars.make,
-                  cars.model, cars.year, cars.seats, cars.owner
+                  rides.src, rides.dst, rides.driver, rides.cno
     from rides join locations as source on rides.src = source.lcode
                left join locations as destination on rides.dst = destination.lcode
                left join enroute on rides.rno = enroute.rno
                left join locations as enrou on enroute.lcode = enrou.lcode
-               left join cars on rides.cno = cars.cno
     where (rides.src = '{0}' COLLATE NOCASE OR
            rides.dst = '{0}' COLLATE NOCASE OR
            source.city LIKE '%{0}%' COLLATE NOCASE OR
@@ -263,12 +261,18 @@ def print_rides(rides):
     current = 0
     max = len(rides)
     for x in range(max):
-        ride_string =( '''\n\tRno: {0}\n\tPrice: {1}\n\tRide Date: {2}\n\tSeats: {3}\n\tLuggage Description:{4}
-        Source code: {5}\n\tDestination Code {6}\n\tDriver: {7}\n\tCar Number: {8}\n\tMake: {9}
-        Model: {10}\n\tYear: {11}\n\tSeats: {12}\n\t Owner: {13}'''.format(rides[x][0],
-        rides[x][1], rides[x][2], rides[x][3], rides[x][4], rides[x][5], rides[x][6], rides[x][7], rides[x][8], rides[x][9]
-        , rides[x][10], rides[x][11], rides[x][12], rides[x][13]))
-        print(ride_string)
+        if rides[x][8] == None:
+            ride_string =( '''\n\tRno: {0}\n\tPrice: {1}\n\tRide Date: {2}\n\tSeats: {3}\n\tLuggage Description:{4}
+            Source code: {5}\n\tDestination Code {6}\n\tDriver: {7}\n\tCar Number: No car on Record'''.format(rides[x][0],
+            rides[x][1], rides[x][2], rides[x][3], rides[x][4], rides[x][5], rides[x][6], rides[x][7]))
+            print(ride_string)
+        else:
+            query = '''select * from cars where cno = {0};'''.format(rides[x][8])
+            cursor.execute(query)
+            cars = cursor.fetchall()
+            ride_string =( '''\n\tRno: {0}\n\tPrice: {1}\n\tRide Date: {2}\n\tSeats: {3}\n\tLuggage Description:{4}Source code: {5}\n\tDestination Code {6}\n\tDriver: {7}\n\tCar Number: {8}\n\tMake: {9} Model: {10}\n\tYear: {11}\n\tSeats: {12}\n\tOwner: {13}'''.format(rides[x][0],rides[x][1], rides[x][2], rides[x][3], rides[x][4], rides[x][5], rides[x][6], rides[x][7], rides[x][8], cars[0][1], cars[0][2],
+            cars[0][3], cars[0][4], cars[0][5]))
+            print(ride_string)
         if ((x+1)%5 ==0):
             flag = input("\nContinue printing? (Y/N): ")
             input_test(flag)
