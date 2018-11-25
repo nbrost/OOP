@@ -1,0 +1,10 @@
+	0:1385570526,camera-camcorder-lens,edmonton
+	130:1001612872,bed-mattress,edmonton
+	1600:1396178670,camera-camcorder-lens,calgary
+	240:1275366783,camera-camcorder-lens,calgary
+	50:1003735318,art-collectibles,edmonton
+	50:1003735660,art-collectibles,edmonton
+	525:1370676359,camera-camcorder-lens,edmonton
+	75:1002787981,art-collectibles,red-deer
+	80:1269098382,camera-camcorder-lens,red-deer
+	8500:1304786670,camera-camcorder-lens,calgary
