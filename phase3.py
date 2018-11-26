@@ -90,17 +90,31 @@ def getInput():
             userInput = userInput.split(' ')
             for index in range(len(userInput)):
                 if isComparison(userInput[index]):
-                    ads = comparisonSearch(userInput,index)
+                    compTuple = comparisonSearch(userInput,index, aids)
                     #Call comparison search function(s) here
                     #have it return an array of the relevant aids 
+                    if compTuple[0] == None:
+                        print("No ads match that query")
+                        break
+                    deleting = []
+                    if aids == []:
+                        aids = compTuple[0]
                     
-                    pass
+                    else:
+                        for index in range(len(aids)):
+                            if aids[index] not in compTuple[0]: 
+                                deleting.append(index)
+                    deleting.reverse()
+                    if deleting != []:
+                        for i in deleting:
+                            del aids[i]
+                    index += compTuple[1]
+                    
                 else:
                     
                     #Call term search function(s) here
                     #have it return an array of the relevant aids 
                     pass
-        
         if aids != []:
             printAds(aids)
 
@@ -138,8 +152,8 @@ def isComparison(string):
     
     
 #determines which type of search to do and calls appropriate function
-def comparisonSearch(userInput,index):
-    adIds = ()
+def comparisonSearch(userInput,index,prevIds):
+    adIds = () #will be a tuple where [0] = tuple of ids [1] = offset
     if len(userInput[index])>=8:
         if userInput[index][0:8] == 'location':
             adIds = locationSearch(userInput,index)
@@ -170,7 +184,7 @@ def locationSearch(userInput,index):
     print ('hell')
     global dates_database
     global dates_cursor
-    return ()
+    return None
 
 def catSearch(userInput, index):
     print('hey there')
@@ -178,16 +192,297 @@ def catSearch(userInput, index):
     global dates_cursor
     return()
 
-def dateSearch(userInput,index):
-    print('date ssearch')
-    global dates_database
-    global dates_cursor
-    return()
+def dateSearch(user_input,index):
+    offset = 0
+    if '>=' in user_input[index]:
+        user_input[index]=user_input[index].replace('>=','')
+        if len(user_input[index]) >5:
+            amount = (user_input[index][5:])            
+        else:
+            amount = (user_input[index+1])
+            offset = 1
+        ids = dateGreater(amount)
+        ids.append(dateEqual(amount))
+        return(ids,offset)
+    elif '<=' in user_input[index]:
+        user_input[index] = user_input[index].replace('<=','')
+        if len(user_input[index]) >5:
+            amount = (user_input[index][5:])
+        else:
+            amount = (user_input[index+1])
+            offset = 1
+        ids = dateLess(amount)
+        ids.append(dateEqual(amount))
+        return(ids,offset)
+    elif '>' in user_input[index]:
+        user_input[index]=user_input[index].replace('>','')
+        if len(user_input[index]) >5:
+            amount = (user_input[index][5:])
+        else:
+            amount = (user_input[index+1])
+            offset = 1
+        ids = dateGreater(amount)
+        return(ids,offset)
+    elif '<' in user_input[index]:
+        user_input[index] = user_input[index].replace('<','')
+        if len(user_input[index]) >5:
+            amount = (user_input[index][5:])
+        else:
+            amount = (user_input[index+1])
+            offset = 1
+        ids = dateLess(amount)
+        return(ids,offset)  
+    elif '=' in user_input[index]:
+        user_input[index] = user_input[index].replace('=','')
+        if len(user_input[index])>5:
+            amount = (user_input[index][5:])
+        else:
+            amount = (user_input[index+1])
+            offset = 1
+        ids = dateEqual(amount)
+        return(ids,offset)
+    elif '>=' in user_input[index+1]:
+        if len(user_input[index+1])>2:
+            amount = (user_input[index+1][2:])
+            offset = 1
+        else:
+            amount = (user_input[index+2])
+            offset = 2
+        ids = dateGreater(amount)
+        ids.append(dateEqual(amount))
+        return(ids,offset)
+    elif '<=' in user_input[index +1]:
+        if len(user_input[index+1])>2:
+            amount = (user_input[index+1][2:])
+            offset =1
+        else:
+            amount = (user_input[index+2])
+            offset = 2
+        ids = dateLess(amount)
+        ids.append(dateEqual(amount))
+        return(ids,offset)
+    elif '>' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = (user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = (user_input[index+2])
+            offset = 2
+        ids = dateGreater(amount)
+        return(ids,offset) 
+    elif '<' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = (user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = (user_input[index+2])
+            offset = 2
+        ids = dateLess(amount)
+        return(ids,offset)  
+    elif '=' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = (user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = (user_input[index+2])
+            offset = 2
+        ids = dateEqual(amount)
+        return(ids,offset)    
+    else:
+        return(None,0)
 
 def priceSearch(user_input,index):
-    print('price')
+    offset = 0
+    if '>=' in user_input[index]:
+        user_input[index]=user_input[index].replace('>=','')
+        if len(user_input[index]) >5:
+            amount = int(user_input[index][5:])            
+        else:
+            amount = int(user_input[index+1])
+            offset = 1
+        ids = priceGreater(amount-1)
+        return(ids,offset)
+    elif '<=' in user_input[index]:
+        user_input[index] = user_input[index].replace('<=','')
+        if len(user_input[index]) >5:
+            amount = int(user_input[index][5:])
+        else:
+            amount = int(user_input[index+1])
+            offset = 1
+        ids = priceLess(amount +1)
+        return(ids,offset)
+    elif '>' in user_input[index]:
+        user_input[index]=user_input[index].replace('>','')
+        if len(user_input[index]) >5:
+            amount = int(user_input[index][5:])
+        else:
+            amount = int(user_input[index+1])
+            offset = 1
+        ids = priceGreater(amount)
+        return(ids,offset)
+    elif '<' in user_input[index]:
+        user_input[index] = user_input[index].replace('<','')
+        if len(user_input[index]) >5:
+            amount = int(user_input[index][5:])
+        else:
+            amount = int(user_input[index+1])
+            offset = 1
+        ids = priceLess(amount)
+        return(ids,offset)  
+    elif '=' in user_input[index]:
+        user_input[index] = user_input[index].replace('=','')
+        if len(user_input[index])>5:
+            amount = int(user_input[index][5:])
+        else:
+            amount = int(user_input[index+1])
+            offset = 1
+        ids = priceEqual(amount)
+        return(ids,offset)
+    elif '>=' in user_input[index+1]:
+        if len(user_input[index+1])>2:
+            amount = int(user_input[index+1][2:])
+            offset = 1
+        else:
+            amount = int(user_input[index+2])
+            offset = 2
+        ids = priceGreater(amount-1)
+        return(ids,offset)
+    elif '<=' in user_input[index +1]:
+        if len(user_input[index+1])>2:
+            amount = int(user_input[index+1][2:])
+            offset =1
+        else:
+            amount = int(user_input[index+2])
+            offset = 2
+        ids = priceLess(amount+1)
+        return(ids,offset)
+    elif '>' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = int(user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = int(user_input[index+2])
+            offset = 2
+        ids = priceGreater(amount)
+        return(ids,offset) 
+    elif '<' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = int(user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = int(user_input[index+2])
+            offset = 2
+        ids = priceLess(amount)
+        return(ids,offset)  
+    elif '=' in user_input[index+1]:
+        if len(user_input[index+1])>1:
+            amount = int(user_input[index+1][1:])
+            offset = 1
+        else:
+            amount = int(user_input[index+2])
+            offset = 2
+        ids = priceEqual(amount)
+        return(ids,offset)    
+    else:
+        return(None,0)
+    
+def dateGreater(amount):
+    print(amount)
+    global date_database
+    global date_curs
+    results = []
+    date = amount
+    date = date.encode('utf-8')
+    idnum = date_curs.set_range(date)
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode('utf-8')
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    idnum=price_curs.next()
+    while idnum!= None:
+        idnum = idnum[1].decode('utf-8')
+        idnum = idnum.split(',')
+        results.append(idnum[0])
+        idnum = date_curs.next()
+    
+    return(results)
+    
+def dateLess(amount):
+    pass
+def dateEqual(amount):
+    pass
+def priceGreater(amount):
+    
     global price_database
-    global price_cursor
-    return()
+    global price_curs  
+    amount = str(amount)
+    amount = '            ' + amount
+    amount = amount[-12:]
+    amount = amount.encode('utf-8')
+    results = []
+    idnum = price_curs.set_range(amount)
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode('utf-8')
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    idnum=price_curs.next()
+    while idnum!= None:
+        idnum = idnum[1].decode('utf-8')
+        idnum = idnum.split(',')
+        results.append(idnum[0])
+        idnum = price_curs.next()
+    
+    return(results)
+def priceLess(amount):
+    
+    global price_database
+    global price_curs 
+    
+    bamount = str(amount)
+    bamount = '            '+ bamount
+    bamount = bamount[-12:]
+    bamount = bamount.encode("utf-8")
+    results = []
+    idnum = price_curs.set_range(b'           0')
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode("utf-8")
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    idnum = price_curs.next()
+    while idnum!=None:
+        idnum = (int(idnum[0].decode("utf-8")),idnum[1])
+        if idnum[0]>= amount:
+            break
+        idnum = idnum[1].decode("utf-8")
+        idnum = idnum.split(',')
+        results.append(idnum[0])
+        idnum = price_curs.next()
 
+    return(results)
+def priceEqual(amount):
+    global price_database
+    global price_curs  
+    amount = str(amount)
+    amount = '            '+ amount
+    amount = amount[-12:]
+    amount = amount.encode("utf-8")
+    results = []
+    idnum = price_curs.set(amount)
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode("utf-8")
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    
+    for i in range(price_curs.count()-1):
+        idnum = price_curs.next_dup()[1].decode('utf-8')
+        
+        idnum=idnum.split(',')
+        
+        results.append(idnum[0])
+
+    return(results)    
 main()
