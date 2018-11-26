@@ -30,7 +30,11 @@ def generate_files(readfile):
                 print("Error when writing pdates.txt")
             
             try:
-                string = "\t"+get_text('price', line)[0]+":"+aid+","+get_text("cat", line)[0]+","+get_text("loc", line)[0]+"\n" #added tab 
+                string = get_text('price', line)[0]+":"+aid+","+get_text("cat", line)[0]+","+get_text("loc", line)[0]+"\n" #added tab 
+                string = string.split(':')
+                string[0] = '            ' + string[0]
+                string[0] = string[0][-12:]
+                string = string[0] + ':' + string[1]
                 pricefile.write(string)
             except:
                 print("Error when writing prices.txt")
