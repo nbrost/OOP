@@ -196,28 +196,44 @@ def dateSearch(user_input,index):
     offset = 0
     if '>=' in user_input[index]:
         user_input[index]=user_input[index].replace('>=','')
-        if len(user_input[index]) >5:
-            amount = (user_input[index][5:])            
+        if len(user_input[index]) >4:
+            amount = (user_input[index][4:])            
         else:
             amount = (user_input[index+1])
             offset = 1
         ids = dateGreater(amount)
-        ids.append(dateEqual(amount))
+        if ids == None:
+            ids = []
+        equalids = dateEqual(amount)
+        if equalids!=None:
+            for i in range(len(equalids)):
+                if equalids[i] != None:
+                    ids.append(equalids[i])
+        if ids == []:
+            ids = None
         return(ids,offset)
     elif '<=' in user_input[index]:
         user_input[index] = user_input[index].replace('<=','')
-        if len(user_input[index]) >5:
-            amount = (user_input[index][5:])
+        if len(user_input[index]) >4:
+            amount = (user_input[index][4:])
         else:
             amount = (user_input[index+1])
             offset = 1
         ids = dateLess(amount)
-        ids.append(dateEqual(amount))
+        if ids == None:
+            ids = []
+        equalids = dateEqual(amount)
+        if equalids != None:
+            for i in range(len(equalids)):
+                if equalids[i] != None:
+                    ids.append(equalids[i])
+        if ids == []:
+            ids = None
         return(ids,offset)
     elif '>' in user_input[index]:
         user_input[index]=user_input[index].replace('>','')
-        if len(user_input[index]) >5:
-            amount = (user_input[index][5:])
+        if len(user_input[index]) >4:
+            amount = (user_input[index][4:])
         else:
             amount = (user_input[index+1])
             offset = 1
@@ -225,8 +241,8 @@ def dateSearch(user_input,index):
         return(ids,offset)
     elif '<' in user_input[index]:
         user_input[index] = user_input[index].replace('<','')
-        if len(user_input[index]) >5:
-            amount = (user_input[index][5:])
+        if len(user_input[index]) >4:
+            amount = (user_input[index][4:])
         else:
             amount = (user_input[index+1])
             offset = 1
@@ -234,8 +250,8 @@ def dateSearch(user_input,index):
         return(ids,offset)  
     elif '=' in user_input[index]:
         user_input[index] = user_input[index].replace('=','')
-        if len(user_input[index])>5:
-            amount = (user_input[index][5:])
+        if len(user_input[index])>4:
+            amount = (user_input[index][4:])
         else:
             amount = (user_input[index+1])
             offset = 1
@@ -249,7 +265,15 @@ def dateSearch(user_input,index):
             amount = (user_input[index+2])
             offset = 2
         ids = dateGreater(amount)
-        ids.append(dateEqual(amount))
+        if ids == None:
+            ids = []
+        equalids = dateEqual(amount)
+        if equalids != None:
+            for i in range(len(equalids)):
+                if equalids[i] != None:
+                    ids.append(equalids[i])
+        if ids == []:
+            ids = None
         return(ids,offset)
     elif '<=' in user_input[index +1]:
         if len(user_input[index+1])>2:
@@ -259,7 +283,15 @@ def dateSearch(user_input,index):
             amount = (user_input[index+2])
             offset = 2
         ids = dateLess(amount)
-        ids.append(dateEqual(amount))
+        if ids == None:
+            ids = []
+        equalids= dateEqual(amount)
+        if equalids!= None:
+            for i in range(len(equalids)):
+                if equalids[i] != None:
+                    ids.append(equalids[i])
+        if ids == []:
+            ids = None
         return(ids,offset)
     elif '>' in user_input[index+1]:
         if len(user_input[index+1])>1:
@@ -387,19 +419,28 @@ def priceSearch(user_input,index):
         return(None,0)
     
 def dateGreater(amount):
-    print(amount)
     global date_database
     global date_curs
     results = []
     date = amount
+    day = int(amount[-2:])
+    
+    day+=1
+    if day<10:
+        day = '0' + str(day)
+    else:
+        day = str(day)
+    date = date[0:-2] + day
+    
     date = date.encode('utf-8')
     idnum = date_curs.set_range(date)
+    print(idnum)
     if idnum == None:
         return None
     idnum = idnum[1].decode('utf-8')
     idnum = idnum.split(',')
     results.append(idnum[0])
-    idnum=price_curs.next()
+    idnum=date_curs.next()
     while idnum!= None:
         idnum = idnum[1].decode('utf-8')
         idnum = idnum.split(',')
@@ -409,13 +450,53 @@ def dateGreater(amount):
     return(results)
     
 def dateLess(amount):
-    pass
+    global date_database
+    global date_curs 
+    results = []
+    date = amount.encode('utf-8')
+    idnum = date_curs.set_range(b'0')
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode("utf-8")
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    idnum = date_curs.next()
+    while idnum!=None:
+        idnum = ((idnum[0].decode("utf-8")),idnum[1])
+        if idnum[0]>= amount:
+            break
+        idnum = idnum[1].decode("utf-8")
+        idnum = idnum.split(',')
+        results.append(idnum[0])
+        idnum = date_curs.next()
+
+    return(results)
 def dateEqual(amount):
-    pass
+    global date_database
+    global date_curs  
+    date = amount
+    date = date.encode("utf-8")
+    results = []
+    idnum = date_curs.set(date)
+    if idnum == None:
+        return None
+    idnum = idnum[1].decode("utf-8")
+    idnum = idnum.split(',')
+    results.append(idnum[0])
+    
+    for i in range(date_curs.count()-1):
+        idnum = date_curs.next_dup()[1].decode('utf-8')
+        
+        idnum=idnum.split(',')
+        
+        results.append(idnum[0])
+
+    return(results)
 def priceGreater(amount):
     
     global price_database
     global price_curs  
+    amount +=1
     amount = str(amount)
     amount = '            ' + amount
     amount = amount[-12:]

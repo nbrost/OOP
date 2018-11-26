@@ -1,5 +1,5 @@
 from bsddb3 import db
-DB_File = "pr.idx"
+DB_File = "da.idx"
 
 database = db.DB()
 database.open(DB_File,None, db.DB_BTREE, db.DB_RDONLY)
