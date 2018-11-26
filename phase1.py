@@ -1,7 +1,8 @@
 import re
 
 def main():
-    readfilename = "miniproj2-small-data.txt"
+    
+    readfilename = input('Please enter file name: ')
     generate_files(readfilename)
     
 ''' generates the 4 text files (terms.txt, pdates.txt, prices.txt, ads.txt) '''
@@ -40,7 +41,7 @@ def generate_files(readfile):
                 print("Error when writing prices.txt")
             
             try:
-                string = aid+":"+line.lower() #added lower
+                string = aid+":"+line#.lower() added lower
                 adfile.write(string)
             except:
                 print("Error when writing ads.txt")
@@ -54,7 +55,7 @@ def generate_files(readfile):
 ''' given the tag name, and the line to examine it will return a list of the words between the tags '''
 def get_text(tag, line):
     try:
-        string = re.search("<"+tag+">"+"(.*)"+"</"+tag+">", line).group(1).lower() #added lower here 
+        string = re.search("<"+tag+">"+"(.*)"+"</"+tag+">", line).group(1)#.lower() #added lower here 
     except:
         print("tag doesn't exist")
         return []

@@ -1,6 +1,11 @@
 import re
 from bsddb3 import db
 
+fullOutput = False #True: print full output, False: print brief output
+ads = None
+terms = None
+pdates = None
+prices = None
 #opens price index file
 price_File = "pr.idx"
 price_database = db.DB()
@@ -24,57 +29,97 @@ terms_File = "te.idx"
 terms_database = db.DB()
 terms_database.open(terms_File,None, db.DB_BTREE, db.DB_RDONLY)
 terms_curs = terms_database.cursor()
+#cursor = None
 
-fullOutput = False #True: print full output, False: print brief output
+
 
 def main():
+    global database
+    openDatabases()
     getInput()
+    closeDatabases()
+    
+    print("\nGoodbye!")
+
+
+def openDatabases():
+    global ads, terms, pdates, prices
+    ads = db.DB()
+    ads.open("ad.idx")
+    
+    terms = db.DB()
+    terms.open("te.idx")
+    
+    pdates = db.DB()
+    pdates.open("da.idx")
+    
+    prices = db.DB()
+    prices.open("pr.idx")
+
+    
+    
+def closeDatabases():
+    global ads, terms, pdates, prices
+    ads.close()
+    terms.close()
+    pdates.close()
+    prices.close()
     terms_database.close()
     date_database.close()
     ad_database.close()
-    price_database.close()
-    print("\nGoodbye!")
+    price_database.close()    
 
 
 ''' Takes an array of aids and prints out the information of each.
     It prints out the full information if fullOutput is True, otherwise
     it prints out a brief report.'''
 def printAds(aids):
-    global fullOutput
+    global fullOutput, ads
     for aid in aids:
+        try:
+            aid = aid.encode('utf-8')
+        except:
+            pass
+        try:
+            #aid = bytes(aid.decode('utf-8')[0:-1], encoding='utf-8') #awkwardly removes the \n on aid
+            line = ads.get(aid).decode('utf-8') #added ascii decoding here
+        except:
+            print("There was an error when printing.")
+            return
         #get title
-        title = None
+        title = re.search("<ti>"+"(.*)"+"</ti>", line).group(1)
         #print aid, title
-        print("\n\tAd Id:", aid)
+        print("\n\tAd Id:", aid.decode('utf-8')) #added ascii decoding here
         print("\tTitle:", title)
         
         if fullOutput:
             #get the values
-            date = None
-            loc = None
-            cat = None
-            price = None
-            desc = None
+            date = re.search("<date>"+"(.*)"+"</date>", line).group(1)
+            loc = re.search("<loc>"+"(.*)"+"</loc>", line).group(1)
+            cat = re.search("<cat>"+"(.*)"+"</cat>", line).group(1)
+            price = re.search("<price>"+"(.*)"+"</price>", line).group(1)
+            desc = re.search("<desc>"+"(.*)"+"</desc>", line).group(1)
             #print the values
-            print("\tDate:")
-            print("\tLocation:")
-            print("\tCategory:")
-            print("\tPrice: ")
-            print("\tDescription:")
+            print("\tDate:", date)
+            print("\tLocation:", loc)
+            print("\tCategory:", cat)
+            print("\tPrice: ", price)
+            print("\tDescription:", desc)
+
 
 
 '''Takes the user's input and decides what to do with it. It's essentially a management function'''
 def getInput():
-    global fullOutput
+    global fullOutput, ads, terms, pdates, prices
     while True:
         userInput = input("\nEnter a query: ").lower()
-        #aids is the array to hold the aids of the results returned by the searches
+        indexBump = 0
         aids = []
         
         #evaluates the user input
         if userInput == "q" or userInput == "quit":
             break
-        elif userInput.startswith("output"):
+        elif userInput.startswith("output"): #allows output to be passed to term/comparison search if it's a substring
             values = userInput.replace(" ", "").split("=")
             if len(values) == 2:
                 val = values[1]
@@ -86,35 +131,46 @@ def getInput():
                     print("Invalid request.")
             else:
                 print("Invalid request.")
-        else:
+        elif len(userInput) > 0:
             userInput = userInput.split(' ')
             for index in range(len(userInput)):
-                if isComparison(userInput[index]):
-                    compTuple = comparisonSearch(userInput,index, aids)
-                    #Call comparison search function(s) here
-                    #have it return an array of the relevant aids 
-                    if compTuple[0] == None:
-                        print("No ads match that query")
-                        break
-                    deleting = []
-                    if aids == []:
-                        aids = compTuple[0]
+                if (index + indexBump) < len(userInput):
+                    if isComparison(userInput[index+indexBump]):
+                        compTuple = comparisonSearch(userInput,index+indexBump, aids)
+                        #Call comparison search function(s) here
+                        #have it return an array of the relevant aids 
+                        if compTuple[0] == None:
+                            print("No ads match that query")
+                            break
+                        deleting = []
+                        if aids == []:
+                            aids = compTuple[0]
                     
+                        else:
+                            for index in range(len(aids)):
+                                if aids[index] not in compTuple[0]: 
+                                    deleting.append(index)
+                        deleting.reverse()
+                        if deleting != []:
+                            for i in deleting:
+                                del aids[i]
+                        indexBump += compTuple[1]
+
                     else:
-                        for index in range(len(aids)):
-                            if aids[index] not in compTuple[0]: 
-                                deleting.append(index)
-                    deleting.reverse()
-                    if deleting != []:
-                        for i in deleting:
-                            del aids[i]
-                    index += compTuple[1]
-                    
-                else:
-                    
-                    #Call term search function(s) here
-                    #have it return an array of the relevant aids 
-                    pass
+                        index = index+indexBump
+                        deleting = []
+                        if aids == []:
+                            aids = termSearch(userInput[index])
+                        else:
+                            idTuple = termSearch(userInput[index])
+                            for index in range(len(aids)):
+                                if aids[index] not in idTuple:
+                                    deleting.append(index)
+                        deleting.reverse()
+                        if deleting!=[]:
+                            for i in deleting:
+                                del aids[i]
+        
         if aids != []:
             printAds(aids)
 
@@ -149,8 +205,6 @@ def isComparison(string):
                 if string[0:3] == 'cat':
                     return True
     return False
-    
-    
 #determines which type of search to do and calls appropriate function
 def comparisonSearch(userInput,index,prevIds):
     adIds = () #will be a tuple where [0] = tuple of ids [1] = offset
@@ -180,11 +234,106 @@ def comparisonSearch(userInput,index,prevIds):
             adIds = catSearch(userInput, index)
     return adIds
 
+
+'''Takes the a string and searches for matches in the terms file'''
+def termSearch(term):
+    global terms 
+    cursor = terms.cursor()
+    L = []
+    term = term.replace(" ", "")
+    if validTerm(term):
+        if term.endswith("%"):
+            term = term[0:-1]
+            result = cursor.set_range(bytes(term, encoding="utf-8")) #added ascii decoding here
+            while result != None and result[0].decode('utf-8').startswith(term): #added ascii decoding here
+                if result[1] not in L: 
+                    L.append(result[1].decode('utf-8'))
+                result = cursor.next()
+            if L == []:
+                print("No results returned <"+term+">")
+        else:
+            result = cursor.set_range(bytes(term, encoding="utf-8")) #added ascii decoding here
+            while result != None and result[0].decode('utf-8') == term: #added ascii decoding here
+                if result[1] not in L: 
+                    L.append(result[1].decode('utf-8'))
+                result = cursor.next()
+            if L == []:
+                print("No results returned <"+term+">")            
+    else:
+        print("Invalid term:", term)
+    cursor.close()
+    return L
+
+#checks the validity of a given term
+#assumes that, excluding a valid wildcard symbol, the term must be more than 2 characters
+def validTerm(term):
+    length = len(term)
+    if term.endswith("%"):
+            if length>3:
+                for i in range(length-1):
+                    if re.match("[0-9a-zA-Z_-]", term[i]) == None:
+                        print("Invalid term.")
+                        return False               
+            else:
+                print("Invalid term.")
+                return False
+    elif length > 2:
+        for i in range(length): 
+            if re.match("[0-9a-zA-Z_-]", term[i]) == None:
+                print("Invalid term.")
+                return False
+    else:
+        print("Invalid term.")
+        return False
+    return True
 def locationSearch(userInput,index):
-    print ('hell')
-    global dates_database
-    global dates_cursor
-    return None
+    offset = 0
+    if len(userInput[index]) >9:
+        offset= 0
+        location = userInput[index][9:]
+    elif len(userInput[index]) == 9:
+        offset = 1
+        location = userInput[index+1]
+    else:
+        if len(userInput[index+1]) == 1:
+            offset = 2
+            location = userInput[index+2]
+        else:
+            offset = 1
+            location = userInput[index+1][1:]
+    ids = locationEqual(location)
+    return (ids,offset)
+
+def locationEqual(location):
+    global price_curs, price_database
+    iter = price_curs.first()
+    ads = []
+    while (iter):
+        loc= iter[1].decode('utf-8')
+        loc= loc.split(',')
+        loc = loc[-1].lower()
+        if loc == location.lower():
+            aid = iter[1].decode('utf-8')
+            aid = aid.split(',')
+            aid = aid[0]
+            ads.append(aid)        
+    
+        #iterating through duplicates
+        dup = price_curs.next_dup()
+        while(dup!=None):
+            loc = dup[1].decode('utf-8')
+            loc = loc.split(',')
+            loc = loc[-1].lower()
+            if loc == location.lower():
+                aid = dup[1].decode('utf-8')
+                aid = aid.split(',')
+                aid = aid[0]
+                ads.append(aid)
+            dup = price_curs.next_dup()
+    
+        iter = price_curs.next()
+    return(ads)
+    
 
 def catSearch(userInput, index):
     print('hey there')
@@ -434,7 +583,6 @@ def dateGreater(amount):
     
     date = date.encode('utf-8')
     idnum = date_curs.set_range(date)
-    print(idnum)
     if idnum == None:
         return None
     idnum = idnum[1].decode('utf-8')
